@@ -1,0 +1,111 @@
+#join {
+    font-family: Montserrat, "Helvetica Neue", sans-serif;
+}
+
+#join_renew,
+#join_form {
+    display: none;
+}
+
+#form_body {
+    padding: 1rem;
+    border: 1px solid #d1d1d1;
+}
+
+#member_fetch_error {
+    display: none;
+}
+
+#test_button_wrapper {
+    display: none;
+}
+
+button#existing_member {
+    margin-top: 1rem;
+    margin-right: 2rem;
+}
+
+#waiver_modal {
+    display: none;
+}
+#paypal {
+    padding-right: 2rem !important;
+}
+
+#paypal_wrapper {
+    pointer-events: none;
+    background-color: #ffffff;
+    opacity: 0.5;
+    z-index: 99;
+    cursor: default;
+}
+
+#waiver_wrapper {
+    display: none;
+}
+
+span.spinner {
+    display: none;
+    position: relative;
+    left: -16px;
+    top: 16px;
+    width: 16px;
+    height: 16px;
+    margin: 5px 5px 0;
+    background: url('/wp-admin/images/wpspin_light.gif') no-repeat;
+    background-size: 16px 16px;
+    float: right;
+    opacity: .7;
+    filter: alpha(opacity=70);
+}
+
+#paypal_spinner {
+    left: 20px;
+    top: 2px;
+}
+
+label.control-label {
+    padding: 0 5px;
+}
+
+label.waiver {
+    color: gray;
+}
+
+.form-error {
+    font-size: 10px;
+    display: block;
+    min-height: 10px;
+    color: #ff0000;
+}
+
+input,
+select {
+    height: 2rem;
+    font-family: Montserrat, "Helvetica Neue", sans-serif !important;
+}
+
+input.required,
+select.required {
+    border: 1px solid #ff9c97 !important;
+}
+
+input.valid,
+select.valid {
+    border: 1px solid #d1d1d1 !important;
+}
+
+input.disable {
+    border: none;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    margin-top: -1px;
+    vertical-align: middle;
+}
+
+.field-wrapper {
+    padding: 0 5px;
+    margin-bottom: 5px;
+}

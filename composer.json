@@ -1,0 +1,10 @@
+{
+    "require": {
+        "twilio/sdk": "^5.16"
+    },
+    "autoload": {
+        "psr-4": {
+            "RideLeader\\": ["src/"]
+        }
+    }
+}

@@ -1,0 +1,38 @@
+.typeahead__button,
+.guest_message {
+    display: none;
+}
+
+.guest_message {
+    margin-top: 1rem;
+}
+
+#guest_phone {
+    margin-top: 1rem;
+    display: none;
+    padding: 0.7em;
+    width: 50%;
+    height: 2.5rem;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -webkit-appearance: textfield;
+    outline-offset: -2px;
+    color: #666;
+    background: #fff;
+}
+
+div.leader_spinner {
+    display: none;
+    position: relative;
+    left: 0;
+    top: 16px;
+    width: 16px;
+    height: 16px;
+    margin: 5px 5px 0;
+    background: url('/wp-admin/images/wpspin_light.gif') no-repeat;
+    background-size: 16px 16px;
+    float: right;
+    opacity: .7;
+    filter: alpha(opacity=70);
+}
