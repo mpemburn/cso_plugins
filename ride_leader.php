@@ -7,7 +7,7 @@ if (!class_exists('RideLeader')) {
     {
         /** @var \RosterAPI $rosterApi */
         protected $rosterApi;
-        protected $assetVersion = '1.0';
+        protected $assetVersion = '1.4';
         protected $memberList;
         protected $devMode = false;
         protected $devApiUrl = 'https://cso_roster.test/api';

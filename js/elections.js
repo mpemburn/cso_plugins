@@ -60,22 +60,30 @@ var CsoElection = {
 };
 
 jQuery(document).ready(function ($) {
-    jQuery.typeahead({
-        input: '.js-typeahead',
-        order: "asc",
-        source: {
-            data: electionNamespace.memberList
-        },
-        callback: {
-            onInit: function (node) {
-            },
-            onResult: function (node, query, result, resultCount, resultCountPerGroup) {
-                // var found = (query.length > 2 && resultCount === 0);
-                // electionNamespace.rideLeader.toggleGuestButton(found, query);
-            }
-        }
-    });
     if (jQuery('#cso_election').is('*')) {
+        jQuery.typeahead({
+            input: '#write_in_president',
+            order: "asc",
+            source: {
+                data: electionNamespace.memberList
+            },
+            callback: {
+                onInit: function (node) {
+                    console.log('It init');
+                },
+                onReady: function (node) {
+                    console.log('It is ready');
+                },
+                onSearch: function (node, query) {
+                    console.log('It searches');
+                },
+                onResult: function (node, query, result, resultCount, resultCountPerGroup) {
+                    console.log('Some typing');
+                    // var found = (query.length > 2 && resultCount === 0);
+                    // electionNamespace.rideLeader.toggleGuestButton(found, query);
+                }
+            }
+        });
         electionNamespace.election = Object.create(CsoElection);
         electionNamespace.election.init();
     }

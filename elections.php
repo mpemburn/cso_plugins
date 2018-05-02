@@ -8,7 +8,9 @@ if (!class_exists('CsoElections')) {
     class CsoElections
     {
         protected $rosterApi;
+        protected $assetVersion = '1.4';
         protected $memberList;
+        protected $membersLoaded = false;
         protected $officeCount = 0;
         protected $raceData = [];
         /** @var \ElectionsPosts $electionsPosts */
@@ -22,7 +24,6 @@ if (!class_exists('CsoElections')) {
             $instance->rosterApi = new RosterAPI();
 
             $instance->loadSettings();
-            $instance->loadMemberList();
 
             $instance->enqueueAssets();
             add_action('init', array($instance, 'registerShortcodes'));
@@ -101,10 +102,15 @@ if (!class_exists('CsoElections')) {
 
         public function loadMemberList()
         {
+
             $url = '/member/list';
             $response = $this->rosterApi->makeApiCall('GET', $url);
 
             $this->memberList = $response['body'];
+            // Add JS and CSS assets
+            $this->enqueueWriteIns();
+
+            $this->membersLoaded = true;
         }
 
         protected function getHash()
@@ -176,6 +182,10 @@ if (!class_exists('CsoElections')) {
                 $name = trim($parts[1]);
                 if (strtolower($name) == 'write-in') {
                     $choice = $this->getWriteInList($value, $officeKey);
+                    // Load the member list 'cuz we're gonna need it
+                    if (!$this->membersLoaded) {
+                        $this->loadMemberList();
+                    }
                 } else {
                     $choice = '<label>';
                     $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>' . $name;
@@ -272,15 +282,23 @@ if (!class_exists('CsoElections')) {
 
         protected function enqueueAssets()
         {
-            $version = '1.9';
-            wp_enqueue_style('typeahead', plugin_dir_url(__FILE__) . 'css/jquery.typeahead.css', '', $version);
+            $version = $this->assetVersion;
+
+            wp_enqueue_style('election_typeahead', plugin_dir_url(__FILE__) . 'css/jquery.typeahead.css', '', $version);
             wp_enqueue_style('cso_election', plugin_dir_url(__FILE__) . 'css/elections.css', '', $version);
 
-            wp_register_script('typeahead', plugin_dir_url(__FILE__) . 'js/jquery.typeahead.js', '', $version, true);
+            wp_register_script('election_typeahead', plugin_dir_url(__FILE__) . 'js/jquery.typeahead.js', '', $version, true);
+            wp_enqueue_script('election_typeahead');
             wp_register_script('validate', plugin_dir_url(__FILE__) . 'js/validate.js', '', $version, true);
             wp_enqueue_script('validate');
             wp_register_script('cso_election', plugin_dir_url(__FILE__) . 'js/elections.js', '', $version, true);
             wp_enqueue_script('cso_election');
+
+        }
+
+        protected function enqueueWriteIns()
+        {
+            $version = $this->assetVersion;
 
             wp_register_script('election-ajax-js', null);
             wp_localize_script('election-ajax-js', 'electionNamespace', [
@@ -288,6 +306,7 @@ if (!class_exists('CsoElections')) {
                 'memberList' => json_decode($this->memberList),
             ]);
             wp_enqueue_script('election-ajax-js');
+
         }
     }
 }
