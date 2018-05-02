@@ -60,6 +60,21 @@ var CsoElection = {
 };
 
 jQuery(document).ready(function ($) {
+    jQuery.typeahead({
+        input: '.js-typeahead',
+        order: "asc",
+        source: {
+            data: electionNamespace.memberList
+        },
+        callback: {
+            onInit: function (node) {
+            },
+            onResult: function (node, query, result, resultCount, resultCountPerGroup) {
+                // var found = (query.length > 2 && resultCount === 0);
+                // electionNamespace.rideLeader.toggleGuestButton(found, query);
+            }
+        }
+    });
     if (jQuery('#cso_election').is('*')) {
         electionNamespace.election = Object.create(CsoElection);
         electionNamespace.election.init();

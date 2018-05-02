@@ -4,88 +4,91 @@ include 'elections_post_type.php';
 include 'roster_api.php';
 include 'crypto.php';
 
-class CsoElections
-{
-    protected $rosterApi;
-    protected $officeCount = 0;
-    protected $raceData = [];
-    /** @var \ElectionsPosts $electionsPosts */
-    protected $electionsPosts;
-    protected $block = false;
-    protected $errorMessage;
-
-    public static function register()
+if (!class_exists('CsoElections')) {
+    class CsoElections
     {
-        $instance = new self;
-        $instance->rosterApi = new RosterAPI();
+        protected $rosterApi;
+        protected $memberList;
+        protected $officeCount = 0;
+        protected $raceData = [];
+        /** @var \ElectionsPosts $electionsPosts */
+        protected $electionsPosts;
+        protected $block = false;
+        protected $errorMessage;
 
-        $instance->loadSettings();
+        public static function register()
+        {
+            $instance = new self;
+            $instance->rosterApi = new RosterAPI();
 
-        $instance->enqueueAssets();
-        add_action('init', array($instance, 'registerShortcodes'));
-        // Register elections post type
-        $instance->electionsPosts = new ElectionsPosts();
+            $instance->loadSettings();
+            $instance->loadMemberList();
 
-        // Set up AJAX handlers
-        add_action('wp_ajax_cso_elections', [$instance, 'registerVote']);
-        add_action('wp_ajax_nopriv_cso_elections', [$instance, 'registerVote']);
-    }
+            $instance->enqueueAssets();
+            add_action('init', array($instance, 'registerShortcodes'));
+            // Register elections post type
+            $instance->electionsPosts = new ElectionsPosts();
 
-    public function registerShortcodes()
-    {
-        add_shortcode('cso_elections', array($this, 'electionShortcodeHandler'));
-    }
-
-    public function electionShortcodeHandler($att, $content)
-    {
-        if ($this->block) {
-            return '';
+            // Set up AJAX handlers
+            add_action('wp_ajax_cso_elections', [$instance, 'registerVote']);
+            add_action('wp_ajax_nopriv_cso_elections', [$instance, 'registerVote']);
         }
 
-        global $post;
+        public function registerShortcodes()
+        {
+            add_shortcode('cso_elections', array($this, 'electionShortcodeHandler'));
+        }
 
-        $postId = $post->ID;
-        $html = '';
-        $officeKey = '';
-
-        if (isset($att['start'])) {
-            $hash = $this->getHash();
-            $eligible = $this->testForElegibility($postId, $hash);
-            if (!$eligible) {
-                $this->block = true;
-                return $this->errorMessage;
+        public function electionShortcodeHandler($att, $content)
+        {
+            if ($this->block) {
+                return '';
             }
-            $html = $this->buildFormHead($hash, $postId);
+
+            global $post;
+
+            $postId = $post->ID;
+            $html = '';
+            $officeKey = '';
+
+            if (isset($att['start'])) {
+                $hash = $this->getHash();
+                $eligible = $this->testForElegibility($postId, $hash);
+                if (!$eligible) {
+                    $this->block = true;
+                    return $this->errorMessage;
+                }
+                $html = $this->buildFormHead($hash, $postId);
+            }
+
+            if (isset($att['date'])) {
+                $this->setElectionMeta($att, $postId);
+            }
+
+            if (isset($att['office'])) {
+                $office = $att['office'];
+                $officeKey = strtolower(str_replace(' ', '_', $office));
+                $html = $this->buildRace($office);
+
+                $this->officeCount++;
+            }
+
+            if (isset($att['candidates'])) {
+                $choices = $this->buildCandidates($att['candidates'], $officeKey, $postId);
+                $html = str_replace('~~~', $choices, $html);
+
+                $this->setElectionMeta($att, $postId);
+            }
+
+            if (isset($att['end'])) {
+                $html = $this->buildFormTail();
+            }
+
+            return $html;
         }
 
-        if (isset($att['date'])) {
-            $this->setElectionMeta($att, $postId);
-        }
-
-        if (isset($att['office'])) {
-            $office = $att['office'];
-            $officeKey = strtolower(str_replace(' ', '_', $office));
-            $html = $this->buildRace($office);
-
-            $this->officeCount++;
-        }
-
-        if (isset($att['candidates'])) {
-            $choices = $this->buildCandidates($att['candidates'], $officeKey, $postId);
-            $html = str_replace('~~~', $choices, $html);
-
-            $this->setElectionMeta($att, $postId);
-        }
-
-        if (isset($att['end'])) {
-            $html = $this->buildFormTail();
-        }
-
-        return $html;
-    }
-
-    protected function loadSettings()
-    {
+        protected function loadSettings()
+        {
 //        $option = get_option('roster_option_name');
 //
 //        $settings = (!empty($option)) ? (object)$option : null;
@@ -94,197 +97,197 @@ class CsoElections
 //            $this->apiUrl = (!$this->devMode) ? $settings->api_uri : $this->devApiUrl;
 //        }
 
-    }
+        }
 
-    protected function getHash()
-    {
-        $request = $_GET;
-        $hash = (isset($request['x'])) ? $request['x'] : null;
+        public function loadMemberList()
+        {
+            $url = '/member/list';
+            $response = $this->rosterApi->makeApiCall('GET', $url);
 
-        return $hash;
-    }
+            $this->memberList = $response['body'];
+        }
 
-    protected function getElectionDateStamp($postId)
-    {
-        $electionDate = get_post_meta($postId, 'election_date');
+        protected function getHash()
+        {
+            $request = $_GET;
+            $hash = (isset($request['x'])) ? $request['x'] : null;
 
-        return (!empty($electionDate)) ? array_pop($electionDate) : null;
-    }
+            return $hash;
+        }
 
-    protected function verifyHash($hash)
-    {
-        $key = md5('Baloney');
-        $phone = Crypto::decrypt($hash, $key, true);
+        protected function getElectionDateStamp($postId)
+        {
+            $electionDate = get_post_meta($postId, 'election_date');
 
-        $url = '/member/verify/' . $phone;
-        $response = $this->rosterApi->makeApiCall('GET', $url);
+            return (!empty($electionDate)) ? array_pop($electionDate) : null;
+        }
 
-        if (strstr($response['body'], '{"success"') !== 'false') {
-            $memberData = json_decode($response['body']);
-            if ($memberData->success) {
-                return true;
+        protected function verifyHash($hash)
+        {
+            $key = md5('Baloney');
+            $phone = Crypto::decrypt($hash, $key, true);
+
+            $url = '/member/verify/' . $phone;
+            $response = $this->rosterApi->makeApiCall('GET', $url);
+
+            if (strstr($response['body'], '{"success"') !== 'false') {
+                $memberData = json_decode($response['body']);
+                if ($memberData->success) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        protected function setElectionMeta($attributes, $postId)
+        {
+            $electionDate = $this->getElectionDateStamp($postId);
+            $date = (isset($attributes['date'])) ? $attributes['date'] : null;
+            if (empty($electionDate) && !is_null($date)) {
+                update_post_meta($postId, 'election_date', strtotime($date));
+            }
+
+            $electionData = get_post_meta($postId, 'elections');
+            $candidates = (isset($attributes['candidates'])) ? $attributes['candidates'] : null;
+            if (empty($electionData) && !is_null($candidates)) {
+                // Add the data to the post meta
+                update_post_meta($postId, 'elections', $this->raceData);
             }
         }
 
-        return false;
-    }
-
-    protected function setElectionMeta($attributes, $postId)
-    {
-        $electionDate = $this->getElectionDateStamp($postId);
-        $date = (isset($attributes['date'])) ? $attributes['date'] : null;
-        if (empty($electionDate) && ! is_null($date)) {
-            update_post_meta($postId, 'election_date', strtotime($date));
-        }
-
-        $electionData = get_post_meta($postId, 'elections');
-        $candidates = (isset($attributes['candidates'])) ? $attributes['candidates'] : null;
-        if (empty($electionData) && ! is_null($candidates)) {
-            // Add the data to the post meta
-            update_post_meta($postId, 'elections', $this->raceData);
-        }
-    }
-
-    protected function buildRace($office)
-    {
-        $html = '<div class="cso-election" data-office="' . $office . '">';
-        $html .= '<h4>' . $office . '</h4>';
-        $html .= '~~~';
-        $html .= '</div>';
-
-        return $html;
-    }
-
-    protected function buildCandidates($candidatesAttribute, $officeKey, $postId)
-    {
-        $candidates = explode(',', $candidatesAttribute);
-        $choices = '';
-        foreach ($candidates as $candidate) {
-            $parts = explode(':', $candidate);
-            $value = trim($parts[0]);
-            $name = trim($parts[1]);
-            $choice = '<label>';
-            $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>' . $name;
-            $choice .= '</label>';
-            $choices .= $choice;
-            // Save the race data
-            $this->raceData[$officeKey][$value] = $name;
-        }
-
-        return $choices;
-    }
-
-    protected function buildFormHead($hash, $postId)
-    {
-        if (!empty($hash)) {
-            $html = '<div id="election_container">';
-            $html .= '<form id="cso_election">';
-            $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
-            $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
+        protected function buildRace($office)
+        {
+            $html = '<div class="cso-election" data-office="' . $office . '">';
+            $html .= '<h4>' . $office . '</h4>';
+            $html .= '~~~';
+            $html .= '</div>';
 
             return $html;
         }
 
-        return false;
-    }
+        protected function buildCandidates($candidatesAttribute, $officeKey, $postId)
+        {
+            $candidates = explode(',', $candidatesAttribute);
+            $choices = '';
+            foreach ($candidates as $candidate) {
+                $parts = explode(':', $candidate);
+                $value = trim($parts[0]);
+                $name = trim($parts[1]);
+                if (strtolower($name) == 'write-in') {
+                    $choice = $this->getWriteInList($value, $officeKey);
+                } else {
+                    $choice = '<label>';
+                    $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>' . $name;
+                    $choice .= '</label>';
 
-    protected function buildFormTail()
-    {
-        $html = '    </form>';
-        $html .= '    <div>';
-        $html .= '        <button class="ui-button " id="vote_button" name="vote_button" disabled>Vote</button>';
-        $html .= '        <span id="vote_spinner" class="spinner"></span>';
-        $html .= '        <div id="verify_message" style="display: none;">Please verify your choices before clicking "Vote".</div>';
-        $html .= '    </div>';
-        $html .= '</div>';
+                }
+                $choices .= $choice;
+                // Save the race data
+                $this->raceData[$officeKey][$value] = $name;
+            }
 
-        return $html;
-    }
-
-    public function registerVote()
-    {
-        $data = $_POST['data'];
-        parse_str($data, $voteData);
-
-        $postId = $voteData['post_id'];
-        $hash = $voteData['hash'];
-        $electionData = get_post_meta($postId, 'elections');
-        unset($voteData['post_id']);
-        unset($voteData['hash']);
-
-        $electionDate = $this->getElectionDateStamp($postId);
-
-        $success = $this->electionsPosts->recordVote($voteData, array_pop($electionData), $electionDate, $hash);
-
-        wp_send_json([
-            'success' => $success,
-            'redirect' => '/vote-success',
-            'errorMessage' => $this->electionsPosts->getErrorMessage()
-        ]);
-    }
-
-    protected function testForElegibility($postId, $hash)
-    {
-        $verified = $this->verifyHash($hash);
-        $electionDate = $this->getElectionDateStamp($postId);
-        $alreadyVoted = $this->electionsPosts->hasAlreadyVoted($electionDate, $hash);
-        if (!$verified) {
-            $this->errorMessage = 'This content is not available.';
-            return false;
+            return $choices;
         }
-        if ($alreadyVoted) {
-            $this->errorMessage = $this->electionsPosts->getErrorMessage();
+
+        protected function buildFormHead($hash, $postId)
+        {
+            if (!empty($hash)) {
+                $html = '<div id="election_container">';
+                $html .= '<form id="cso_election">';
+                $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
+                $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
+
+                return $html;
+            }
+
             return false;
         }
 
-        return true;
-    }
+        protected function buildFormTail()
+        {
+            $html = '    </form>';
+            $html .= '    <div>';
+            $html .= '        <button class="ui-button " id="vote_button" name="vote_button" disabled>Vote</button>';
+            $html .= '        <span id="vote_spinner" class="spinner"></span>';
+            $html .= '        <div id="verify_message" style="display: none;">Please verify your choices before clicking "Vote".</div>';
+            $html .= '    </div>';
+            $html .= '</div>';
 
-    protected function enqueueAssets()
-    {
-        $version = '1.8';
-        wp_enqueue_style( 'jquery-ui'. 'http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css' );
-        wp_enqueue_style('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css');
-        wp_enqueue_style('cso_election', plugin_dir_url(__FILE__) . 'css/elections.css', '', $version);
-
-        wp_enqueue_script('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js');
-        wp_register_script('validate', plugin_dir_url(__FILE__) . 'js/validate.js', '', $version, true);
-        wp_enqueue_script('validate');
-        wp_register_script('cso_election', plugin_dir_url(__FILE__) . 'js/elections.js', '', $version, true);
-        wp_enqueue_script('cso_election');
-
-        wp_register_script('election-ajax-js', null);
-        wp_localize_script('election-ajax-js', 'electionNamespace', [
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-        ]);
-        wp_enqueue_script('election-ajax-js');
-    }
-
-    protected function makeApiCall($action, $url, $data = [])
-    {
-        $response = null;
-
-        // TODO: Future security enhancement
-        $username = 'your-username';
-        $password = 'your-password';
-        $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$password"));
-        if ($action == 'GET') {
-            $response = wp_remote_get($url, [
-                'headers' => $headers,
-                'sslverify' => false
-            ]);
-        }
-        if ($action == 'POST') {
-            $response = wp_remote_post($url, [
-                'headers' => $headers,
-                'body' => $data,
-                'sslverify' => false,
-                'timeout' => 45,
-            ]);
+            return $html;
         }
 
-        return $response;
+        public function getWriteInList($value, $officeKey)
+        {
+            $html = '<span class="typeahead__query">';
+
+            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>';
+            $html .= '<input class="js-typeahead" id="write_in_' . $officeKey . '"
+                       name="write_in_' . $officeKey . '"
+                       type="search"
+                       autocomplete="off">';
+            $html .= '</span>';
+
+            return $html;
+        }
+
+        public function registerVote()
+        {
+            $data = $_POST['data'];
+            parse_str($data, $voteData);
+
+            $postId = $voteData['post_id'];
+            $hash = $voteData['hash'];
+            $electionData = get_post_meta($postId, 'elections');
+            unset($voteData['post_id']);
+            unset($voteData['hash']);
+
+            $electionDate = $this->getElectionDateStamp($postId);
+
+            $success = $this->electionsPosts->recordVote($voteData, array_pop($electionData), $electionDate, $hash);
+
+            wp_send_json([
+                'success' => $success,
+                'redirect' => '/vote-success',
+                'errorMessage' => $this->electionsPosts->getErrorMessage()
+            ]);
+        }
+
+        protected function testForElegibility($postId, $hash)
+        {
+            $verified = $this->verifyHash($hash);
+            $electionDate = $this->getElectionDateStamp($postId);
+            $alreadyVoted = $this->electionsPosts->hasAlreadyVoted($electionDate, $hash);
+            if (!$verified) {
+                $this->errorMessage = 'This content is not available.';
+                return false;
+            }
+            if ($alreadyVoted) {
+                $this->errorMessage = $this->electionsPosts->getErrorMessage();
+                return false;
+            }
+
+            return true;
+        }
+
+        protected function enqueueAssets()
+        {
+            $version = '1.9';
+            wp_enqueue_style('typeahead', plugin_dir_url(__FILE__) . 'css/jquery.typeahead.css', '', $version);
+            wp_enqueue_style('cso_election', plugin_dir_url(__FILE__) . 'css/elections.css', '', $version);
+
+            wp_register_script('typeahead', plugin_dir_url(__FILE__) . 'js/jquery.typeahead.js', '', $version, true);
+            wp_register_script('validate', plugin_dir_url(__FILE__) . 'js/validate.js', '', $version, true);
+            wp_enqueue_script('validate');
+            wp_register_script('cso_election', plugin_dir_url(__FILE__) . 'js/elections.js', '', $version, true);
+            wp_enqueue_script('cso_election');
+
+            wp_register_script('election-ajax-js', null);
+            wp_localize_script('election-ajax-js', 'electionNamespace', [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'memberList' => json_decode($this->memberList),
+            ]);
+            wp_enqueue_script('election-ajax-js');
+        }
     }
-
-
 }

@@ -5,7 +5,6 @@ include 'admin_settings.php';
 if (!class_exists('JoinCso')) {
     class JoinCso
     {
-
         protected $rosterApi;
         protected $paypalSandboxKey;
         protected $paypalProductionKey;

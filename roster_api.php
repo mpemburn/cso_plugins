@@ -1,7 +1,6 @@
 <?php
 
 if (!class_exists('RosterAPI')) {
-
     class RosterAPI
     {
         protected $apiUrl;

@@ -5,7 +5,9 @@ include 'roster_api.php';
 if (!class_exists('RideLeader')) {
     class RideLeader
     {
+        /** @var \RosterAPI $rosterApi */
         protected $rosterApi;
+        protected $assetVersion = '1.0';
         protected $memberList;
         protected $devMode = false;
         protected $devApiUrl = 'https://cso_roster.test/api';
@@ -23,7 +25,7 @@ if (!class_exists('RideLeader')) {
             $instance->loadSettings();
             $instance->rosterApi = new RosterAPI();
 
-            $instance->loadListing();
+            $instance->loadMemberList();
             $instance->enqueueAssets();
 
             add_action('init', array($instance, 'registerShortcodes'));
@@ -36,51 +38,16 @@ if (!class_exists('RideLeader')) {
             //$instance->sendText();
         }
 
-        public function registerReceiveMessageRoute()
-        {
-            register_rest_route('rideleader/v2', '/receive_sms', array(
-                'methods' => 'POST',
-                'callback' => [$this, 'triggerReceiveSms'],
-            ));
-        }
-
-        public function triggerReceiveSms()
-        {
-            $phone = $_POST['From'];
-
-            $memberName = $this->verifyMember($phone);
-            if ($memberName !== false) {
-                $message = 'Hello ' . $memberName . '!' . PHP_EOL;
-                $message .= 'Tap below to go to the Ride Leader query page:' . PHP_EOL;
-                $message .= get_home_url() . '/ride-leader-service';
-            } else {
-                $message = 'Sorry, your number was not recognized by our system.';
-            }
-            echo header('content-type: text/xml');
-            $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-            $xml .= '<Response>';
-            $xml .= '<Message>';
-            $xml .= $message;
-            $xml .= '</Message>';
-            $xml .= '</Response>';
-
-            echo $xml;
-
-            die();
-        }
-
         /**
          *
          */
         public function enqueueAssets()
         {
-            $version = '1.09';
-            wp_enqueue_style('jquery-ui' . 'http://code.jquery.com/ui/1.9.1/themes/base/jquery-ui.css');
-            wp_enqueue_style('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css');
+            $version = $this->assetVersion;
+
             wp_enqueue_style('typeahead', plugin_dir_url(__FILE__) . 'css/jquery.typeahead.css', '', $version);
             wp_enqueue_style('ride_leader', plugin_dir_url(__FILE__) . 'css/ride_leader.css', '', $version);
 
-            wp_enqueue_script('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js');
             wp_register_script('typeahead', plugin_dir_url(__FILE__) . 'js/jquery.typeahead.js', '', $version, true);
             wp_register_script('ride_leader', plugin_dir_url(__FILE__) . 'js/ride_leader.js', '', $version, true);
             wp_enqueue_script('ride_leader');
@@ -96,7 +63,7 @@ if (!class_exists('RideLeader')) {
 
         public function leaderFormHandler($att, $content)
         {
-            $this->loadListing();
+            $this->loadMemberList();
 
             ob_start();
 
@@ -107,7 +74,7 @@ if (!class_exists('RideLeader')) {
             return $output;
         }
 
-        public function loadListing()
+        public function loadMemberList()
         {
             $url = '/member/list';
             $response = $this->rosterApi->makeApiCall('GET', $url);
@@ -177,32 +144,5 @@ if (!class_exists('RideLeader')) {
             }
 
         }
-
-        protected function makeApiCall($action, $url, $data = [])
-        {
-            $response = null;
-
-            // TODO: Future security enhancement
-            $username = 'your-username';
-            $password = 'your-password';
-            $headers = array('Authorization' => 'Basic ' . base64_encode("$username:$password"));
-            if ($action == 'GET') {
-                $response = wp_remote_get($url, [
-                    'headers' => $headers,
-                    'sslverify' => false
-                ]);
-            }
-            if ($action == 'POST') {
-                $response = wp_remote_post($url, [
-                    'headers' => $headers,
-                    'body' => $data,
-                    'sslverify' => false,
-                    'timeout' => 45,
-                ]);
-            }
-
-            return $response;
-        }
-
     }
 }

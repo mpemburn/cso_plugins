@@ -3,7 +3,6 @@
 include 'admin_settings.php';
 include 'crypto.php';
 
-
 if (!class_exists('SmsSwitchboard')) {
     class SmsSwitchboard
     {
