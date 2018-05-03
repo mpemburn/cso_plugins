@@ -8,7 +8,7 @@ if (!class_exists('CsoElections')) {
     class CsoElections
     {
         protected $rosterApi;
-        protected $assetVersion = '1.4';
+        protected $assetVersion = '1.9';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;
@@ -229,14 +229,17 @@ if (!class_exists('CsoElections')) {
 
         public function getWriteInList($value, $officeKey)
         {
-            $html = '<span class="typeahead__query">';
-
+            $html = '<div class="typeahead__container">';
             $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>';
+            $html .= '<div class="typeahead__field">';
+            $html .= '<span class="typeahead__query">';
             $html .= '<input class="js-typeahead" id="write_in_' . $officeKey . '"
                        name="write_in_' . $officeKey . '"
                        type="search"
                        autocomplete="off">';
             $html .= '</span>';
+            $html .= '</div>';
+            $html .= '</div>';
 
             return $html;
         }

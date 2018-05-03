@@ -4,11 +4,11 @@ var CsoElection = {
     init: function () {
         //jQuery('#vote').prop('disabled', false)
         this._setListeners();
-        Validate.init({
-            formId: this.formId,
-            caller: this,
-            callback: this._validateVote
-        });
+        // Validate.init({
+        //     formId: this.formId,
+        //     caller: this,
+        //     callback: this._validateVote
+        // });
     },
     _doAjax: function (action, formId) {
         var self = this;
@@ -62,7 +62,7 @@ var CsoElection = {
 jQuery(document).ready(function ($) {
     if (jQuery('#cso_election').is('*')) {
         jQuery.typeahead({
-            input: '#write_in_president',
+            input: '.js-typeahead',
             order: "asc",
             source: {
                 data: electionNamespace.memberList
