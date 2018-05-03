@@ -8,7 +8,7 @@ if (!class_exists('CsoElections')) {
     class CsoElections
     {
         protected $rosterApi;
-        protected $assetVersion = '1.9';
+        protected $assetVersion = '1.8';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;
@@ -218,7 +218,7 @@ if (!class_exists('CsoElections')) {
         {
             $html = '    </form>';
             $html .= '    <div>';
-            $html .= '        <button class="ui-button " id="vote_button" name="vote_button" disabled>Vote</button>';
+            $html .= '        <button class="ui-button " id="vote_button" name="vote_button">Vote</button>';
             $html .= '        <span id="vote_spinner" class="spinner"></span>';
             $html .= '        <div id="verify_message" style="display: none;">Please verify your choices before clicking "Vote".</div>';
             $html .= '    </div>';
@@ -230,7 +230,7 @@ if (!class_exists('CsoElections')) {
         public function getWriteInList($value, $officeKey)
         {
             $html = '<div class="typeahead__container">';
-            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>';
+            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required" data-type="write-in"/>';
             $html .= '<div class="typeahead__field">';
             $html .= '<span class="typeahead__query">';
             $html .= '<input class="js-typeahead" id="write_in_' . $officeKey . '"

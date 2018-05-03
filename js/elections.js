@@ -2,13 +2,7 @@ var CsoElection = {
     formId: '#cso_election',
     formValid: false,
     init: function () {
-        //jQuery('#vote').prop('disabled', false)
         this._setListeners();
-        // Validate.init({
-        //     formId: this.formId,
-        //     caller: this,
-        //     callback: this._validateVote
-        // });
     },
     _doAjax: function (action, formId) {
         var self = this;
@@ -40,6 +34,13 @@ var CsoElection = {
             }
         });
     },
+    _isValidVote: function () {
+        jQuery(this.formId + ' *').filter(':input').each(function (evt) {
+            var thisInput = jQuery(this);
+        })
+
+        return false;
+    },
     _enableVoteButton: function() {
         var valid = this.formValid;
 
@@ -49,7 +50,9 @@ var CsoElection = {
     _setListeners: function () {
         var self = this;
         jQuery('#vote_button').on('click', function () {
-            self._doAjax('cso_elections', self.formId);
+            if (self._isValidVote()) {
+                self._doAjax('cso_elections', self.formId);
+            }
         });
 
     },
