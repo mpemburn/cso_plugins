@@ -1,12 +1,35 @@
 var Validate = {
     formId: '',
     caller: null,
-    callback: function() {},
+    callback: null, //function() {},
+    listen: true,
     validRequired: {},
     init: function(options) {
         jQuery.extend(this, options);
         this._loadValidations();
-        this._listen();
+        if (this.listen) {
+            this._setListener();
+        }
+    },
+    validate: function (thisInput) {
+        var $this = jQuery(thisInput);
+        var isValid = true;
+
+        var valid = this._setValid($this, ($this.val() !== ''));
+        this._toggleValid($this, valid);
+
+        for  (var field in this.validRequired) {
+            if (this.validRequired.hasOwnProperty(field)) {
+                if (!this.validRequired[field]) {
+                    isValid = false;
+                }
+            }
+        }
+        if (this.callback !== null) {
+            this.callback(this.caller, isValid);
+        }
+
+        return isValid;
     },
     _loadValidations: function () {
         var self = this;
@@ -29,26 +52,12 @@ var Validate = {
     _toggleValid: function ($this, isValid) {
         $this.toggleClass('valid', isValid);
     },
-    _listen: function() {
+    _setListener: function() {
         var self = this;
 
         jQuery(this.formId + ' *').filter(':input').off()
             .on('keyup change', function (evt) {
-            var $this = jQuery(this);
-            var isValid = true;
-
-            var valid = self._setValid(jQuery(this), ($this.val() !== ''));
-            self._toggleValid($this, valid);
-
-            for  (var field in self.validRequired) {
-                if (self.validRequired.hasOwnProperty(field)) {
-                    if (!self.validRequired[field]) {
-                        isValid = false;
-                    }
-                }
-            }
-
-            self.callback(self.caller, isValid);
+                self.validate(this);
         });
     }
 

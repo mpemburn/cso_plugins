@@ -181,7 +181,7 @@ if (!class_exists('CsoElections')) {
                 $value = trim($parts[0]);
                 $name = trim($parts[1]);
                 if (strtolower($name) == 'write-in') {
-                    $choice = $this->getWriteInList($value, $officeKey);
+                    $choice = $this->buildWriteInList($value, $officeKey);
                     // Load the member list 'cuz we're gonna need it
                     if (!$this->membersLoaded) {
                         $this->loadMemberList();
@@ -227,10 +227,13 @@ if (!class_exists('CsoElections')) {
             return $html;
         }
 
-        public function getWriteInList($value, $officeKey)
+        public function buildWriteInList($value, $officeKey)
         {
             $html = '<div class="typeahead__container">';
+            $html .= '<label>';
             $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required" data-type="write-in"/>';
+            $html .= 'Write In:';
+            $html .= '</label>';
             $html .= '<div class="typeahead__field">';
             $html .= '<span class="typeahead__query">';
             $html .= '<input class="js-typeahead" id="write_in_' . $officeKey . '"

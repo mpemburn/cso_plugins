@@ -1,8 +1,15 @@
 var CsoElection = {
     formId: '#cso_election',
     formValid: false,
+    allValid: false,
+    validator: null,
     init: function () {
         this._setListeners();
+        this.validator = Validate;
+        this.validator.init({
+            formId: this.formId,
+            listen: false
+        });
     },
     _doAjax: function (action, formId) {
         var self = this;
@@ -35,17 +42,14 @@ var CsoElection = {
         });
     },
     _isValidVote: function () {
+        var self = this;
+        this.allValid = true;
         jQuery(this.formId + ' *').filter(':input').each(function (evt) {
-            var thisInput = jQuery(this);
+            var isValid = self.validator.validate(this);
+            self.allValid = (self.allValid && isValid);
         })
 
         return false;
-    },
-    _enableVoteButton: function() {
-        var valid = this.formValid;
-
-        jQuery('#vote_button').prop('disabled', !valid);
-        jQuery('#verify_message').toggle(valid);
     },
     _setListeners: function () {
         var self = this;
@@ -54,7 +58,13 @@ var CsoElection = {
                 self._doAjax('cso_elections', self.formId);
             }
         });
-
+        jQuery('input:radio').on('click', function () {
+            var $this = jQuery(this);
+            var radioName = $this.attr('name');
+            var isWriteIn = ($this.attr('data-type') === 'write-in');
+            var $writeIn = jQuery('#write_in_' + radioName);
+            $writeIn.toggleClass('required', isWriteIn);
+        });
     },
     _validateVote: function (self, isValid) {
         self.formValid = isValid;
