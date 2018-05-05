@@ -79,7 +79,7 @@ if (!class_exists('RideLeader')) {
             $url = '/member/list';
             $response = $this->rosterApi->makeApiCall('GET', $url);
 
-            $this->memberList = $response['body'];
+            $this->memberList = (isset($response['body'])) ? $response['body'] : [];
         }
 
         public function verifyMember($phone)

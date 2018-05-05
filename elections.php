@@ -8,7 +8,7 @@ if (!class_exists('CsoElections')) {
     class CsoElections
     {
         protected $rosterApi;
-        protected $assetVersion = '1.8';
+        protected $assetVersion = '1.0';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;
@@ -69,7 +69,7 @@ if (!class_exists('CsoElections')) {
             if (isset($att['office'])) {
                 $office = $att['office'];
                 $officeKey = strtolower(str_replace(' ', '_', $office));
-                $html = $this->buildRace($office);
+                $html = $this->buildRace($office, $officeKey);
 
                 $this->officeCount++;
             }
@@ -162,9 +162,10 @@ if (!class_exists('CsoElections')) {
             }
         }
 
-        protected function buildRace($office)
+        protected function buildRace($office, $officeKey)
         {
             $html = '<div class="cso-election" data-office="' . $office . '">';
+            $html .= '<input type="hidden" class="required" id="checked_' . $officeKey . '" name="checked_' . $officeKey . '" value=""/>';
             $html .= '<h4>' . $office . '</h4>';
             $html .= '~~~';
             $html .= '</div>';
@@ -188,7 +189,7 @@ if (!class_exists('CsoElections')) {
                     }
                 } else {
                     $choice = '<label>';
-                    $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required"/>' . $name;
+                    $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '"/>' . $name;
                     $choice .= '</label>';
 
                 }
@@ -231,7 +232,7 @@ if (!class_exists('CsoElections')) {
         {
             $html = '<div class="typeahead__container">';
             $html .= '<label>';
-            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" class="required" data-type="write-in"/>';
+            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" data-type="write-in"/>';
             $html .= 'Write In:';
             $html .= '</label>';
             $html .= '<div class="typeahead__field">';
@@ -239,7 +240,9 @@ if (!class_exists('CsoElections')) {
             $html .= '<input class="js-typeahead" id="write_in_' . $officeKey . '"
                        name="write_in_' . $officeKey . '"
                        type="search"
+                       style="display: none;"
                        autocomplete="off">';
+            $html .= '<div id="must_be_' . $officeKey . '" style="display: none;">Write-ins must be active members.</div>';
             $html .= '</span>';
             $html .= '</div>';
             $html .= '</div>';

@@ -2,14 +2,8 @@ var CsoElection = {
     formId: '#cso_election',
     formValid: false,
     allValid: false,
-    validator: null,
     init: function () {
         this._setListeners();
-        this.validator = Validate;
-        this.validator.init({
-            formId: this.formId,
-            listen: false
-        });
     },
     _doAjax: function (action, formId) {
         var self = this;
@@ -44,10 +38,11 @@ var CsoElection = {
     _isValidVote: function () {
         var self = this;
         this.allValid = true;
-        jQuery(this.formId + ' *').filter(':input').each(function (evt) {
-            var isValid = self.validator.validate(this);
+
+        jQuery('.required').each(function (evt) {
+            var isValid = (jQuery(this).val() !== '');
             self.allValid = (self.allValid && isValid);
-        })
+        });
 
         return false;
     },
@@ -63,7 +58,12 @@ var CsoElection = {
             var radioName = $this.attr('name');
             var isWriteIn = ($this.attr('data-type') === 'write-in');
             var $writeIn = jQuery('#write_in_' + radioName);
-            $writeIn.toggleClass('required', isWriteIn);
+            var $mustBe = jQuery('#must_be_' + radioName);
+            jQuery('#checked_' + radioName).val('true');
+            $writeIn.toggleClass('required', isWriteIn)
+                .toggle(isWriteIn)
+                .focus();
+            $mustBe.toggle(isWriteIn);
         });
     },
     _validateVote: function (self, isValid) {
@@ -77,23 +77,21 @@ jQuery(document).ready(function ($) {
         jQuery.typeahead({
             input: '.js-typeahead',
             order: "asc",
+            minLength: 3,
             source: {
                 data: electionNamespace.memberList
             },
             callback: {
-                onInit: function (node) {
-                    console.log('It init');
-                },
-                onReady: function (node) {
-                    console.log('It is ready');
-                },
                 onSearch: function (node, query) {
-                    console.log('It searches');
-                },
-                onResult: function (node, query, result, resultCount, resultCountPerGroup) {
-                    console.log('Some typing');
-                    // var found = (query.length > 2 && resultCount === 0);
-                    // electionNamespace.rideLeader.toggleGuestButton(found, query);
+                    // Prevent user from typing items not in list
+                    if (query.length > 2) {
+                        var found = jQuery.grep(electionNamespace.memberList, function(value, i) {
+                            return value.indexOf(query) !== -1
+                        }).length;
+                        if (found === 0) {
+                            node.val(query.slice(0, -1));
+                        }
+                    }
                 }
             }
         });
