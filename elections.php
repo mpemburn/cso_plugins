@@ -58,7 +58,7 @@ if (!class_exists('CsoElections')) {
                 $eligible = $this->testForElegibility($postId, $hash);
                 if (!$eligible) {
                     $this->block = true;
-                    return $this->errorMessage;
+                    return '<h4>' . $this->errorMessage . '</h4>';
                 }
                 $html = $this->buildFormHead($hash, $postId);
             }
@@ -70,6 +70,8 @@ if (!class_exists('CsoElections')) {
             if (isset($att['office'])) {
                 $office = $att['office'];
                 $officeKey = strtolower(str_replace(' ', '_', $office));
+                $officeKey = preg_replace("/[^A-Za-z0-9 \-\_]/", '', $officeKey);
+
                 $html = $this->buildRace($office, $officeKey);
 
                 $this->officeCount++;

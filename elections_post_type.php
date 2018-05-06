@@ -1,5 +1,7 @@
 <?php
 
+include 'crypto.php';
+
 if (!class_exists('ElectionsPosts')) {
     class ElectionsPosts
     {
@@ -88,7 +90,9 @@ if (!class_exists('ElectionsPosts')) {
 
         public function hasAlreadyVoted($electionDate, $hash)
         {
-            $vote = new WP_Query(array(
+            $hasVoted = false;
+
+            $election = new WP_Query(array(
                 'post_type' => 'elections',
                 'meta_query' => array(
                     array(
@@ -96,15 +100,18 @@ if (!class_exists('ElectionsPosts')) {
                         'value' => $electionDate,
                         'compare' => '='
                     ),
-                    array(
-                        'key' => 'hash',
-                        'value' => $hash,
-                        'compare' => '='
-                    ),
                 )
             ));
 
-            $hasVoted = $vote->have_posts();
+            foreach ($election->posts as $vote) {
+                $postId = $vote->ID;
+                $savedHash = get_post_meta($postId, 'hash');
+
+                if ($this->compareHashes($savedHash, $hash)) {
+                    $hasVoted = true;
+                }
+            }
+
             if ($hasVoted) {
                 $this->errorMessage = 'You have already cast your ballot for this election';
             }
@@ -112,5 +119,14 @@ if (!class_exists('ElectionsPosts')) {
             return $hasVoted;
         }
 
+        protected function compareHashes($savedHash, $testHash)
+        {
+            $key = md5('Baloney');
+
+            $foundPhone = Crypto::decrypt($savedHash[0], $key, true);
+            $testPhone = Crypto::decrypt($testHash, $key, true);
+
+            return ($foundPhone == $testPhone);
+        }
     }
 }

@@ -111,7 +111,8 @@ if (!class_exists('SmsSwitchboard')) {
                     $cipher = Crypto::encrypt($phone, $key, true);
 
                     $electionUrl = get_home_url() . '/election-2018?x=' . $cipher;
-                    $replyMessage .= 'Click or Tap the link below to go to the Election page:' . PHP_EOL;
+                    $replyMessage .= 'Tap the > LINK below to go to the Election page.' . PHP_EOL;
+                    $replyMessage .= 'You should also receive an email with this link.' . PHP_EOL;
                     $replyMessage .= $electionUrl . PHP_EOL;
 
                     $this->sendEmailtoMember($member, 'Here is your link to vote in the 2018 election', $replyMessage);
