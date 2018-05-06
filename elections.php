@@ -136,6 +136,10 @@ if (!class_exists('CsoElections')) {
             $url = '/member/verify/' . $phone;
             $response = $this->rosterApi->makeApiCall('GET', $url);
 
+            if ($response instanceof WP_Error) {
+                return false;
+            }
+
             if (strstr($response['body'], '{"success"') !== 'false') {
                 $memberData = json_decode($response['body']);
                 if ($memberData->success) {
@@ -241,6 +245,7 @@ if (!class_exists('CsoElections')) {
                        name="write_in_' . $officeKey . '"
                        type="search"
                        style="display: none;"
+                       data-key="' . $officeKey . '"
                        autocomplete="off">';
             $html .= '<div id="must_be_' . $officeKey . '" style="display: none;">Write-ins must be active members.</div>';
             $html .= '</span>';

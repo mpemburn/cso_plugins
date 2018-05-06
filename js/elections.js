@@ -44,6 +44,10 @@ var CsoElection = {
             self.allValid = (self.allValid && isValid);
         });
 
+        if (this.allValid) {
+            var confirmed = confirm('If you are satisfied with your choices, click OK to complete your vote.');
+            return confirmed;
+        }
         return false;
     },
     _setListeners: function () {
@@ -65,11 +69,7 @@ var CsoElection = {
                 .focus();
             $mustBe.toggle(isWriteIn);
         });
-    },
-    _validateVote: function (self, isValid) {
-        self.formValid = isValid;
-        self._enableVoteButton();
-    },
+    }
 };
 
 jQuery(document).ready(function ($) {
@@ -85,12 +85,15 @@ jQuery(document).ready(function ($) {
                 onSearch: function (node, query) {
                     // Prevent user from typing items not in list
                     if (query.length > 2) {
+                        var keyName = node.attr('data-key');
+                        var $mustBe = jQuery('#must_be_' + keyName);
                         var found = jQuery.grep(electionNamespace.memberList, function(value, i) {
                             return value.indexOf(query) !== -1
                         }).length;
                         if (found === 0) {
                             node.val(query.slice(0, -1));
                         }
+                        $mustBe.toggleClass('election-error', (found === 0));
                     }
                 }
             }

@@ -79,6 +79,10 @@ if (!class_exists('RideLeader')) {
             $url = '/member/list';
             $response = $this->rosterApi->makeApiCall('GET', $url);
 
+            if ($response instanceof \WP_Error) {
+                return false;
+            }
+
             $this->memberList = (isset($response['body'])) ? $response['body'] : [];
         }
 
