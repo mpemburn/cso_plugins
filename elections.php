@@ -169,7 +169,7 @@ if (!class_exists('CsoElections')) {
         protected function buildRace($office, $officeKey)
         {
             $html = '<div class="cso-election" data-office="' . $office . '">';
-            $html .= '<input type="hidden" class="required" id="checked_' . $officeKey . '" name="checked_' . $officeKey . '" value=""/>';
+            $html .= '<input type="hidden" class="required" id="vote_' . $officeKey . '" name="vote_' . $officeKey . '" value=""/>';
             $html .= '<h4>' . $office . '</h4>';
             $html .= '~~~';
             $html .= '</div>';
@@ -193,7 +193,11 @@ if (!class_exists('CsoElections')) {
                     }
                 } else {
                     $choice = '<label>';
-                    $choice .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '"/>' . $name;
+                    $choice .= '<input type="radio"
+                                    name="' . $officeKey . '" 
+                                    data-key="' . $officeKey . '" 
+                                    data-name="' . $name . '" 
+                                    value="' . $value . '"/>' . $name;
                     $choice .= '</label>';
 
                 }
@@ -236,7 +240,11 @@ if (!class_exists('CsoElections')) {
         {
             $html = '<div class="typeahead__container">';
             $html .= '<label>';
-            $html .= '<input type="radio" name="' . $officeKey . '" value="' . $value . '" data-type="write-in"/>';
+            $html .= '<input type="radio" 
+                    name="' . $officeKey . '" 
+                    data-key="' . $officeKey . '"
+                    value="' . $value . '" 
+                    data-type="write-in"/>';
             $html .= 'Write In:';
             $html .= '</label>';
             $html .= '<div class="typeahead__field">';

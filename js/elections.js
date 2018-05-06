@@ -50,6 +50,15 @@ var CsoElection = {
         }
         return false;
     },
+    _toggleWriteIn: function (isWriteIn, officeKey) {
+        var $writeIn = jQuery('#write_in_' + officeKey);
+        var $mustBe = jQuery('#must_be_' + officeKey);
+        $writeIn.toggleClass('required', isWriteIn)
+            .toggle(isWriteIn)
+            .val('')
+            .focus();
+        $mustBe.toggle(isWriteIn);
+    },
     _setListeners: function () {
         var self = this;
         jQuery('#vote_button').on('click', function () {
@@ -59,15 +68,13 @@ var CsoElection = {
         });
         jQuery('input:radio').on('click', function () {
             var $this = jQuery(this);
-            var radioName = $this.attr('name');
+            var officeKey = $this.attr('data-key');
+            var officeName = $this.attr('data-name');
             var isWriteIn = ($this.attr('data-type') === 'write-in');
-            var $writeIn = jQuery('#write_in_' + radioName);
-            var $mustBe = jQuery('#must_be_' + radioName);
-            jQuery('#checked_' + radioName).val('true');
-            $writeIn.toggleClass('required', isWriteIn)
-                .toggle(isWriteIn)
-                .focus();
-            $mustBe.toggle(isWriteIn);
+            if (!isWriteIn) {
+                jQuery('#vote_' + officeKey).val(officeName);
+            }
+            self._toggleWriteIn(isWriteIn, officeKey);
         });
     }
 };
@@ -85,8 +92,8 @@ jQuery(document).ready(function ($) {
                 onSearch: function (node, query) {
                     // Prevent user from typing items not in list
                     if (query.length > 2) {
-                        var keyName = node.attr('data-key');
-                        var $mustBe = jQuery('#must_be_' + keyName);
+                        var officeKey = node.attr('data-key');
+                        var $mustBe = jQuery('#must_be_' + officeKey);
                         var found = jQuery.grep(electionNamespace.memberList, function(value, i) {
                             return value.indexOf(query) !== -1
                         }).length;
@@ -95,6 +102,10 @@ jQuery(document).ready(function ($) {
                         }
                         $mustBe.toggleClass('election-error', (found === 0));
                     }
+                },
+                onClickAfter: function (node, a, item, event) {
+                    var officeKey = node.attr('data-key');
+                    jQuery('#vote_' + officeKey).val(item.display);
                 }
             }
         });
