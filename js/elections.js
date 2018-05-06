@@ -101,8 +101,8 @@ jQuery(document).ready(function ($) {
                         if (found === 0) {
                             if (result.length === 0) {
                                 node.val(query.slice(0, -1));
+                                notFound = true;
                             }
-                            notFound = true;
                         }
                         $mustBe.toggleClass('election-error', notFound);
                     }
