@@ -89,7 +89,7 @@ jQuery(document).ready(function ($) {
                 data: electionNamespace.memberList
             },
             callback: {
-                onSearch: function (node, query) {
+                onResult: function (node, query, result, resultHtmlList) {
                     // Prevent user from typing items not in list
                     if (query.length > 2) {
                         var officeKey = node.attr('data-key');
@@ -99,7 +99,9 @@ jQuery(document).ready(function ($) {
                         }).length;
                         var notFound = false
                         if (found === 0) {
-                            node.val(query.slice(0, -1));
+                            if (result.length === 0) {
+                                node.val(query.slice(0, -1));
+                            }
                             notFound = true;
                         }
                         $mustBe.toggleClass('election-error', notFound);
