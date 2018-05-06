@@ -18,12 +18,17 @@ class ElectionsPosts
         $success = true;
 
         foreach ($voteData as $office => $vote) {
-            $race = $electionData[$office];
-            $candidate = $race[$vote];
+            // Ignore all fields unless they begin with 'vote_'. (these are hidden fields)
+            if (substr( $office, 0, 5 ) !== "vote_") {
+                continue;
+            }
+            // Chop off 'vote_' prefix
+            $office = str_replace('vote_', '', $office);
+            // Store vote.  Title is office and timestamp; Content is candidate voted for.
             $postId = wp_insert_post(array (
                 'post_type' => 'elections',
                 'post_title' => $office . ';' . time(),
-                'post_content' => $candidate,
+                'post_content' => $vote,
                 'post_status' => 'publish',
                 'comment_status' => 'closed',
                 'ping_status' => 'closed',
@@ -31,6 +36,7 @@ class ElectionsPosts
             if ($postId == 0 || $postId instanceof WP_Error) {
                 $success = false;
             } else {
+                // Add post meta to store election date at hash
                 update_post_meta($postId, 'election_date', $electionDate);
                 update_post_meta($postId, 'hash', $hash);
             }

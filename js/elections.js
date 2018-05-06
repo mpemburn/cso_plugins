@@ -97,10 +97,12 @@ jQuery(document).ready(function ($) {
                         var found = jQuery.grep(electionNamespace.memberList, function(value, i) {
                             return value.indexOf(query) !== -1
                         }).length;
+                        var notFound = false
                         if (found === 0) {
                             node.val(query.slice(0, -1));
+                            notFound = true;
                         }
-                        $mustBe.toggleClass('election-error', (found === 0));
+                        $mustBe.toggleClass('election-error', notFound);
                     }
                 },
                 onClickAfter: function (node, a, item, event) {
