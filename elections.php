@@ -7,13 +7,14 @@ include 'crypto.php';
 if (!class_exists('CsoElections')) {
     class CsoElections
     {
+        /** @var RosterAPI $rosterApi */
         protected $rosterApi;
-        protected $assetVersion = '1.0';
+        protected $assetVersion = '1.3';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;
         protected $raceData = [];
-        /** @var \ElectionsPosts $electionsPosts */
+        /** @var ElectionsPosts $electionsPosts */
         protected $electionsPosts;
         protected $block = false;
         protected $errorMessage;
@@ -209,33 +210,6 @@ if (!class_exists('CsoElections')) {
             return $choices;
         }
 
-        protected function buildFormHead($hash, $postId)
-        {
-            if (!empty($hash)) {
-                $html = '<div id="election_container">';
-                $html .= '<form id="cso_election">';
-                $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
-                $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
-
-                return $html;
-            }
-
-            return false;
-        }
-
-        protected function buildFormTail()
-        {
-            $html = '    </form>';
-            $html .= '    <div>';
-            $html .= '        <button class="ui-button " id="vote_button" name="vote_button">Vote</button>';
-            $html .= '        <span id="vote_spinner" class="spinner"></span>';
-            $html .= '        <div id="verify_message" style="display: none;">Please verify your choices before clicking "Vote".</div>';
-            $html .= '    </div>';
-            $html .= '</div>';
-
-            return $html;
-        }
-
         public function buildWriteInList($value, $officeKey)
         {
             $html = '<div class="typeahead__container">';
@@ -258,6 +232,33 @@ if (!class_exists('CsoElections')) {
             $html .= '<div id="must_be_' . $officeKey . '" style="display: none;">Write-ins must be active members.</div>';
             $html .= '</span>';
             $html .= '</div>';
+            $html .= '</div>';
+
+            return $html;
+        }
+
+        protected function buildFormHead($hash, $postId)
+        {
+            if (!empty($hash)) {
+                $html = '<div id="election_container" class="col-md-10">';
+                $html .= '<form id="cso_election">';
+                $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
+                $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
+
+                return $html;
+            }
+
+            return false;
+        }
+
+        protected function buildFormTail()
+        {
+            $html = '    </form>';
+            $html .= '    <div class="col-md-12 field-wrapper text-right">';
+            $html .= '        <button class="btn btn-primary  btn-lg" id="vote_button" name="vote_button">Vote</button>';
+            $html .= '        <span id="vote_spinner" class="vote_spinner"></span>';
+            $html .= '        <div id="verify_message" class=" text-left" style="display: none;">Please make your choices (above) before voting.</div>';
+            $html .= '    </div>';
             $html .= '</div>';
 
             return $html;

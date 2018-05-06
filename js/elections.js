@@ -46,18 +46,13 @@ var CsoElection = {
 
         if (this.allValid) {
             var confirmed = confirm('If you are satisfied with your choices, click OK to complete your vote.');
+            jQuery('#vote_spinner').show();
+
             return confirmed;
         }
+        jQuery('#verify_message').show();
+
         return false;
-    },
-    _toggleWriteIn: function (isWriteIn, officeKey) {
-        var $writeIn = jQuery('#write_in_' + officeKey);
-        var $mustBe = jQuery('#must_be_' + officeKey);
-        $writeIn.toggleClass('required', isWriteIn)
-            .toggle(isWriteIn)
-            .val('')
-            .focus();
-        $mustBe.toggle(isWriteIn);
     },
     _setListeners: function () {
         var self = this;
@@ -76,7 +71,16 @@ var CsoElection = {
             }
             self._toggleWriteIn(isWriteIn, officeKey);
         });
-    }
+    },
+    _toggleWriteIn: function (isWriteIn, officeKey) {
+        var $writeIn = jQuery('#write_in_' + officeKey);
+        var $mustBe = jQuery('#must_be_' + officeKey);
+        $writeIn.toggleClass('required', isWriteIn)
+            .toggle(isWriteIn)
+            .val('')
+            .focus();
+        $mustBe.toggle(isWriteIn);
+    },
 };
 
 jQuery(document).ready(function ($) {
