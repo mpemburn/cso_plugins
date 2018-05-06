@@ -149,4 +149,5 @@ if (!class_exists('RideLeader')) {
 
         }
     }
+    RideLeader::register();
 }

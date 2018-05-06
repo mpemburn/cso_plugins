@@ -9,7 +9,7 @@ if (!class_exists('CsoElections')) {
     {
         /** @var RosterAPI $rosterApi */
         protected $rosterApi;
-        protected $assetVersion = '1.3';
+        protected $assetVersion = '1.05';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;

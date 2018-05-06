@@ -101,14 +101,16 @@ jQuery(document).ready(function ($) {
                         var found = jQuery.grep(electionNamespace.memberList, function(value, i) {
                             return value.indexOf(query) !== -1
                         }).length;
-                        var notFound = false
+                        var notFound = false;
+                        var hasResults = (result.length !== 0);
                         if (found === 0) {
-                            if (result.length === 0) {
+                            if (!hasResults) {
                                 node.val(query.slice(0, -1));
                                 notFound = true;
                             }
                         }
-                        $mustBe.toggleClass('election-error', notFound);
+                        $mustBe.toggleClass('election-error', notFound)
+                            .toggle(!hasResults);
                     }
                 },
                 onClickAfter: function (node, a, item, event) {

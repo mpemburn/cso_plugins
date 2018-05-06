@@ -1,12 +1,14 @@
 <?php
 
 include 'admin_settings.php';
+include 'roster_api.php';
 include 'crypto.php';
 
 if (!class_exists('SmsSwitchboard')) {
     class SmsSwitchboard
     {
 
+        /** @var RosterAPI $rosterApi */
         protected $rosterApi;
         protected $memberList;
 
@@ -18,7 +20,7 @@ if (!class_exists('SmsSwitchboard')) {
         {
             $instance = new self;
             $instance->rosterApi = new RosterAPI();
-            //$instance->loadSettings();
+//            //$instance->loadSettings();
             add_action('rest_api_init', [$instance, 'registerReceiveMessageRoute']);
             add_filter('wp_mail_from', [$instance, 'setMailFrom']);
         }
@@ -31,7 +33,7 @@ if (!class_exists('SmsSwitchboard')) {
             ));
         }
 
-        public function my_mail_from($email)
+        public function setMailFrom($email)
         {
             return 'noreply@chesapeakespokesclub.org';
         }
