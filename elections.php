@@ -9,7 +9,7 @@ if (!class_exists('CsoElections')) {
     {
         /** @var RosterAPI $rosterApi */
         protected $rosterApi;
-        protected $assetVersion = '1.05';
+        protected $assetVersion = '1.06';
         protected $memberList;
         protected $membersLoaded = false;
         protected $officeCount = 0;
@@ -133,8 +133,7 @@ if (!class_exists('CsoElections')) {
 
         protected function verifyHash($hash)
         {
-            $key = md5('Baloney');
-            $phone = Crypto::decrypt($hash, $key, true);
+            $phone = Crypto::decrypt($hash);
 
             $url = '/member/verify/' . $phone;
             $response = $this->rosterApi->makeApiCall('GET', $url);

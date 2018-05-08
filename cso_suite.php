@@ -13,7 +13,6 @@ include 'roster_api.php';
 include 'elections.php';
 include 'join_cso.php';
 include 'ride_leader.php';
-include 'sms_switchboard.php';
 
 class CsoSuite
 {
@@ -30,7 +29,6 @@ class CsoSuite
         CsoElections::register();
         JoinCso::register();
         //RideLeader::register();
-        SmsSwitchboard::register();
     }
 
     private function __construct()

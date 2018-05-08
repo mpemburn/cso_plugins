@@ -83,16 +83,9 @@ if (!class_exists('ElectionsPosts')) {
             return $this->errorMessage;
         }
 
-        public function listVotes()
+        public function getVotesByDate($electionDate)
         {
-
-        }
-
-        public function hasAlreadyVoted($electionDate, $hash)
-        {
-            $hasVoted = false;
-
-            $election = new WP_Query(array(
+            $votes = new WP_Query(array(
                 'post_type' => 'elections',
                 'meta_query' => array(
                     array(
@@ -103,9 +96,42 @@ if (!class_exists('ElectionsPosts')) {
                 )
             ));
 
+            return $votes;
+        }
+
+        public function voteTally($electionDate)
+        {
+            $votes = $this->getVotesByDate($electionDate);
+
+            $tally = [];
+            foreach ($votes->posts as $vote) {
+                $postId = $vote->ID;
+                $race = explode(';', $vote->post_title)[0];
+
+                $tally[$race][] = $vote->post_content;
+            }
+
+            return $tally;
+        }
+
+        public function getTally($votes)
+        {
+            $prez = $votes['president'];
+            var_dump(array_count_values($prez));
+            $vp = $votes['vice_president'];
+            var_dump(array_count_values($vp));
+
+        }
+
+        public function hasAlreadyVoted($electionDate, $hash)
+        {
+            $hasVoted = false;
+
+            $election = $this->getVotesByDate($electionDate);
+
             foreach ($election->posts as $vote) {
                 $postId = $vote->ID;
-                $savedHash = get_post_meta($postId, 'hash');
+                $savedHash = get_post_meta($postId, 'hash')[0];
 
                 if ($this->compareHashes($savedHash, $hash)) {
                     $hasVoted = true;
@@ -121,10 +147,8 @@ if (!class_exists('ElectionsPosts')) {
 
         protected function compareHashes($savedHash, $testHash)
         {
-            $key = md5('Baloney');
-
-            $foundPhone = Crypto::decrypt($savedHash[0], $key, true);
-            $testPhone = Crypto::decrypt($testHash, $key, true);
+            $foundPhone = Crypto::decrypt($savedHash);
+            $testPhone = Crypto::decrypt($testHash);
 
             return ($foundPhone == $testPhone);
         }

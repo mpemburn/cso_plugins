@@ -23,6 +23,10 @@ if (!class_exists('SmsSwitchboard')) {
 //            //$instance->loadSettings();
             add_action('rest_api_init', [$instance, 'registerReceiveMessageRoute']);
             add_filter('wp_mail_from', [$instance, 'setMailFrom']);
+
+//            $member = $instance->verifyMember('+14103659495');
+//            $instance->switchboard('+14103659495', 'vote', $member);
+//            $instance->triggerReceiveSms();
         }
 
         public function registerReceiveMessageRoute()
@@ -91,9 +95,11 @@ if (!class_exists('SmsSwitchboard')) {
 
         protected function sendEmailtoMember($member, $subject, $message)
         {
-            $message = str_replace(PHP_EOL, '<br/>', $message);
+            $message = str_replace([PHP_EOL, 'Tap'], ["\r\n\r\n", 'Click'], $message);
 
-            wp_mail($member->email, $subject, $message);
+            if (function_exists('wp_mail')) {
+                wp_mail($member->email, $subject, $message);
+            }
         }
 
         protected function switchboard($phone, $message, $member)
@@ -107,11 +113,10 @@ if (!class_exists('SmsSwitchboard')) {
                     $replyMessage .= get_home_url() . '/ride-leader-service';
                     break;
                 case 'vote':
-                    $key = md5('Baloney');
-                    $cipher = Crypto::encrypt($phone, $key, true);
+                    $cipher = Crypto::encrypt($phone);
 
                     $electionUrl = get_home_url() . '/election-2018?x=' . $cipher;
-                    $replyMessage .= 'Tap the > LINK below to go to the Election page.' . PHP_EOL;
+                    $replyMessage .= 'Tap the link below to go to the Election page.' . PHP_EOL;
                     $replyMessage .= 'You should also receive an email with this link.' . PHP_EOL;
                     $replyMessage .= $electionUrl . PHP_EOL;
 
@@ -125,4 +130,5 @@ if (!class_exists('SmsSwitchboard')) {
         }
 
     }
+    SmsSwitchboard::register();
 }

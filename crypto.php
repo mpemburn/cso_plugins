@@ -1,65 +1,57 @@
 <?php
+/** Crypto: URL-safe encryption */
+
 if (!class_exists('Crypto')) {
     class Crypto
     {
-        const METHOD = 'aes-256-ctr';
-
         /**
-         * Encrypts (but does not authenticate) a message
-         *
-         * @param string $message - plaintext message
-         * @param string $key - encryption key (raw binary expected)
-         * @param boolean $encode - set to TRUE to return a base64-encoded
-         * @return string (raw binary)
+         * @param $plainText
+         * @return bool|string
          */
-        public static function encrypt($message, $key, $encode = false)
+        public static function encrypt($plainText)
         {
-            $nonceSize = openssl_cipher_iv_length(self::METHOD);
-            $nonce = openssl_random_pseudo_bytes($nonceSize);
-
-            $ciphertext = openssl_encrypt(
-                $message,
-                self::METHOD,
-                $key,
-                OPENSSL_RAW_DATA,
-                $nonce
-            );
-
-            // Now let's pack the IV and the ciphertext together
-            // Naively, we can just concatenate
-            if ($encode) {
-                return base64_encode($nonce . $ciphertext);
-            }
-            return $nonce . $ciphertext;
+            return self::encryptor('encrypt', $plainText);
         }
 
         /**
-         * Decrypts (but does not verify) a message
-         *
-         * @param string $message - ciphertext message
-         * @param string $key - encryption key (raw binary expected)
-         * @param boolean $encoded - are we expecting an encoded string?
-         * @return string
+         * @param $cipher
+         * @return bool|string
          */
-        public static function decrypt($message, $key, $encoded = false)
+        public static function decrypt($cipher)
         {
-            if ($encoded) {
-                $message = base64_decode($message, true);
+            return self::encryptor('decrypt', $cipher);
+        }
+
+        /**
+         * @param $action
+         * @param $string
+         * @return bool|string
+         */
+        public static function encryptor($action, $string) {
+            $output = false;
+
+            $encrypt_method = "AES-256-CBC";
+            //pls set your unique hashing key
+            $secret_key = 'muni';
+            $secret_iv = 'muni123';
+
+            // hash
+            $key = hash('sha256', $secret_key);
+
+            // iv - encrypt method AES-256-CBC expects 16 bytes - else you will get a warning
+            $iv = substr(hash('sha256', $secret_iv), 0, 16);
+
+            //do the encyption given text/string/number
+            if( $action == 'encrypt' ) {
+                $output = openssl_encrypt($string, $encrypt_method, $key, 0, $iv);
+                $output = base64_encode($output);
+            }
+            else if( $action == 'decrypt' ){
+                //decrypt the given text/string/number
+                $output = openssl_decrypt(base64_decode($string), $encrypt_method, $key, 0, $iv);
             }
 
-            $nonceSize = openssl_cipher_iv_length(self::METHOD);
-            $nonce = mb_substr($message, 0, $nonceSize, '8bit');
-            $ciphertext = mb_substr($message, $nonceSize, null, '8bit');
-
-            $plaintext = openssl_decrypt(
-                $ciphertext,
-                self::METHOD,
-                $key,
-                OPENSSL_RAW_DATA,
-                $nonce
-            );
-
-            return $plaintext;
+            return $output;
         }
     }
 } // !class_exists('Crypto')

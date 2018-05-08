@@ -27,17 +27,18 @@ var CsoElection = {
                     }
                 }
                 console.log(response);
-                //jQuery('#submit_spinner').hide();
+                jQuery('#vote_spinner').hide();
             },
             error: function (response) {
                 console.log(response);
-                //jQuery('#submit_spinner').hide();
+                jQuery('#vote_spinner').hide();
             }
         });
     },
     _isValidVote: function () {
         var self = this;
         this.allValid = true;
+        var confirmed = false;
 
         jQuery('.required').each(function (evt) {
             var isValid = (jQuery(this).val() !== '');
@@ -45,14 +46,14 @@ var CsoElection = {
         });
 
         if (this.allValid) {
-            var confirmed = confirm('If you are satisfied with your choices, click OK to complete your vote.');
-            jQuery('#vote_spinner').show();
+            confirmed = confirm('If you are satisfied with your choices, click OK to complete your vote.');
+            jQuery('#vote_spinner').toggle(confirmed);
 
-            return confirmed;
+        } else {
+            jQuery('#verify_message').show();
         }
-        jQuery('#verify_message').show();
 
-        return false;
+        return confirmed;
     },
     _setListeners: function () {
         var self = this;
