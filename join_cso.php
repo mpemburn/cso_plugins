@@ -216,7 +216,7 @@ if (!class_exists('JoinCso')) {
 
         protected function loadSettings()
         {
-            $option = get_option('roster_option_name');
+            $option = get_option('cso_suite_option_name');
 
             $settings = (!empty($option)) ? (object)$option : null;
 

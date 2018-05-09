@@ -14,6 +14,14 @@ if (!class_exists('CsoElections')) {
         protected $membersLoaded = false;
         protected $officeCount = 0;
         protected $raceData = [];
+        protected $raceOrder = [
+            'president',
+            'vice_president',
+            'secretary',
+            'treasurer',
+            'member-at-large_1',
+            'member-at-large_2',
+        ];
         /** @var ElectionsPosts $electionsPosts */
         protected $electionsPosts;
         protected $block = false;
@@ -39,7 +47,7 @@ if (!class_exists('CsoElections')) {
         public function registerShortcodes()
         {
             add_shortcode('cso_elections', array($this, 'electionShortcodeHandler'));
-            add_shortcode('cso_election_tally', array($this, 'tallyShortcodeHandler'));
+            add_shortcode('cso_elections_tally', array($this, 'tallyShortcodeHandler'));
         }
 
         public function electionShortcodeHandler($att, $content)
@@ -97,10 +105,19 @@ if (!class_exists('CsoElections')) {
             $html = '';
 
             if (isset($att['date'])) {
+
                 $html .= '<table>';
                 $electionDate = strtotime($att['date']);
                 $tally = $this->electionsPosts->getTally($electionDate);
+                $order = $this->raceOrder;
 
+//                usort($tally, function ($a, $b) use ($order) {
+//                    $pos_a = array_search($a['race'], $order);
+//                    $pos_b = array_search($b['race'], $order);
+//                    return $pos_a - $pos_b;
+//                });
+
+                //krsort($tally);
                 foreach ($tally as $title => $data) {
                     $raceTitle = ucwords(str_replace('_', ' ', $title));
 
@@ -142,56 +159,18 @@ if (!class_exists('CsoElections')) {
             $this->membersLoaded = true;
         }
 
-        protected function getHash()
+        protected function buildFormHead($hash, $postId)
         {
-            $request = $_GET;
-            $hash = (isset($request['x'])) ? $request['x'] : null;
+            if (!empty($hash)) {
+                $html = '<div id="election_container" class="col-md-10">';
+                $html .= '<form id="cso_election">';
+                $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
+                $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
 
-            return $hash;
-        }
-
-        protected function getElectionDateStamp($postId)
-        {
-            $electionDate = get_post_meta($postId, 'election_date');
-
-            return (!empty($electionDate)) ? array_pop($electionDate) : null;
-        }
-
-        protected function verifyHash($hash)
-        {
-            $phone = Crypto::decrypt($hash);
-
-            $url = '/member/verify/' . $phone;
-            $response = $this->rosterApi->makeApiCall('GET', $url);
-
-            if ($response instanceof WP_Error) {
-                return false;
-            }
-
-            if (strstr($response['body'], '{"success"') !== 'false') {
-                $memberData = json_decode($response['body']);
-                if ($memberData->success) {
-                    return true;
-                }
+                return $html;
             }
 
             return false;
-        }
-
-        protected function setElectionMeta($attributes, $postId)
-        {
-            $electionDate = $this->getElectionDateStamp($postId);
-            $date = (isset($attributes['date'])) ? $attributes['date'] : null;
-            if (empty($electionDate) && !is_null($date)) {
-                update_post_meta($postId, 'election_date', strtotime($date));
-            }
-
-            $electionData = get_post_meta($postId, 'elections');
-            $candidates = (isset($attributes['candidates'])) ? $attributes['candidates'] : null;
-            if (empty($electionData) && !is_null($candidates)) {
-                // Add the data to the post meta
-                update_post_meta($postId, 'elections', $this->raceData);
-            }
         }
 
         protected function buildRace($office, $officeKey)
@@ -233,6 +212,8 @@ if (!class_exists('CsoElections')) {
                 // Save the race data
                 $this->raceData[$officeKey][$value] = $name;
             }
+            $this->raceOrder[] = $officeKey;
+            update_post_meta($postId, 'race_order', $this->raceOrder);
 
             return $choices;
         }
@@ -264,20 +245,6 @@ if (!class_exists('CsoElections')) {
             return $html;
         }
 
-        protected function buildFormHead($hash, $postId)
-        {
-            if (!empty($hash)) {
-                $html = '<div id="election_container" class="col-md-10">';
-                $html .= '<form id="cso_election">';
-                $html .= '<input type="hidden" id="post_id" name="post_id" value="' . $postId . '">';
-                $html .= '<input type="hidden" id="hash" name="hash" value="' . $hash . '">';
-
-                return $html;
-            }
-
-            return false;
-        }
-
         protected function buildFormTail()
         {
             $html = '    </form>';
@@ -289,45 +256,6 @@ if (!class_exists('CsoElections')) {
             $html .= '</div>';
 
             return $html;
-        }
-
-        public function registerVote()
-        {
-            $data = $_POST['data'];
-            parse_str($data, $voteData);
-
-            $postId = $voteData['post_id'];
-            $hash = $voteData['hash'];
-            $electionData = get_post_meta($postId, 'elections');
-            unset($voteData['post_id']);
-            unset($voteData['hash']);
-
-            $electionDate = $this->getElectionDateStamp($postId);
-
-            $success = $this->electionsPosts->recordVote($voteData, array_pop($electionData), $electionDate, $hash);
-
-            wp_send_json([
-                'success' => $success,
-                'redirect' => '/vote-success',
-                'errorMessage' => $this->electionsPosts->getErrorMessage()
-            ]);
-        }
-
-        protected function testForElegibility($postId, $hash)
-        {
-            $verified = $this->verifyHash($hash);
-            $electionDate = $this->getElectionDateStamp($postId);
-            $alreadyVoted = $this->electionsPosts->hasAlreadyVoted($electionDate, $hash);
-            if (!$verified) {
-                $this->errorMessage = 'This content is not available.';
-                return false;
-            }
-            if ($alreadyVoted) {
-                $this->errorMessage = $this->electionsPosts->getErrorMessage();
-                return false;
-            }
-
-            return true;
         }
 
         protected function enqueueAssets()
@@ -358,5 +286,105 @@ if (!class_exists('CsoElections')) {
             wp_enqueue_script('election-ajax-js');
 
         }
+
+        protected function getHash()
+        {
+            $request = $_GET;
+            $hash = (isset($request['x'])) ? $request['x'] : null;
+
+            return $hash;
+        }
+
+        protected function getElectionDateStamp($postId)
+        {
+            $electionDate = get_post_meta($postId, 'election_date');
+
+            return (!empty($electionDate)) ? array_pop($electionDate) : null;
+        }
+
+        protected function getRaceOrder($postId)
+        {
+            $raceOrder = get_post_meta($postId, 'race_order');
+
+            return (!empty($raceOrder)) ? $raceOrder : null;
+        }
+
+        protected function verifyHash($hash)
+        {
+            $phone = Crypto::decrypt($hash);
+
+            $url = '/member/verify/' . $phone;
+            $response = $this->rosterApi->makeApiCall('GET', $url);
+
+            if ($response instanceof WP_Error) {
+                return false;
+            }
+
+            if (strstr($response['body'], '{"success"') !== 'false') {
+                $memberData = json_decode($response['body']);
+                if ($memberData->success) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public function registerVote()
+        {
+            $data = $_POST['data'];
+            parse_str($data, $voteData);
+
+            $postId = $voteData['post_id'];
+            $hash = $voteData['hash'];
+            $electionData = get_post_meta($postId, 'elections');
+            unset($voteData['post_id']);
+            unset($voteData['hash']);
+
+            $electionDate = $this->getElectionDateStamp($postId);
+
+            $success = $this->electionsPosts->recordVote($voteData, array_pop($electionData), $electionDate, $hash);
+
+            wp_send_json([
+                'success' => $success,
+                'redirect' => '/vote-success',
+                'errorMessage' => $this->electionsPosts->getErrorMessage()
+            ]);
+        }
+
+        protected function setElectionMeta($attributes, $postId)
+        {
+            $electionDate = $this->getElectionDateStamp($postId);
+            $date = (isset($attributes['date'])) ? $attributes['date'] : null;
+            if (empty($electionDate) && !is_null($date)) {
+                update_post_meta($postId, 'election_date', strtotime($date));
+            }
+
+            $electionData = get_post_meta($postId, 'elections');
+            $candidates = (isset($attributes['candidates'])) ? $attributes['candidates'] : null;
+            if (empty($electionData) && !is_null($candidates)) {
+                // Add the data to the post meta
+                update_post_meta($postId, 'elections', $this->raceData);
+            }
+
+        }
+
+        protected function testForElegibility($postId, $hash)
+        {
+            $verified = $this->verifyHash($hash);
+            $electionDate = $this->getElectionDateStamp($postId);
+            $alreadyVoted = $this->electionsPosts->hasAlreadyVoted($electionDate, $hash);
+            if (!$verified) {
+                $this->errorMessage = 'This content is not available.';
+                return false;
+            }
+            if ($alreadyVoted) {
+                $this->errorMessage = $this->electionsPosts->getErrorMessage();
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }

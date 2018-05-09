@@ -29,7 +29,7 @@
                 <div id="member_verify_button" class="col-md-11">
                     <div class="col-md-12 field-wrapper text-right">
                         <span id="submit_spinner" class="spinner"></span>
-                        <button class="ui-button" id="existing_member" name="existing_member" disabled>Submit</button>
+                        <button class="btn btn-primary" id="existing_member" name="existing_member" disabled>Submit</button>
                     </div>
                 </div>
                 <div class="col-md-12" id="member_verify_message">* Indicates required field.</div>
