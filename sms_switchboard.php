@@ -51,7 +51,7 @@ if (!class_exists('SmsSwitchboard')) {
             if ($memberData !== false) {
                 $replyMessage = $this->switchboard($phone, strtolower(trim($incomingMessage)), $memberData);
             } else {
-                $replyMessage = 'Sorry, your number was not recognized by our system.';
+                $replyMessage = 'Sorry, your number (' . $phone . ') was not recognized by our system.';
             }
 
             echo header('content-type: text/xml');
@@ -130,5 +130,4 @@ if (!class_exists('SmsSwitchboard')) {
         }
 
     }
-    SmsSwitchboard::register();
 }

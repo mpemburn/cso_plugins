@@ -39,6 +39,7 @@ if (!class_exists('CsoElections')) {
         public function registerShortcodes()
         {
             add_shortcode('cso_elections', array($this, 'electionShortcodeHandler'));
+            add_shortcode('cso_election_tally', array($this, 'tallyShortcodeHandler'));
         }
 
         public function electionShortcodeHandler($att, $content)
@@ -86,6 +87,31 @@ if (!class_exists('CsoElections')) {
 
             if (isset($att['end'])) {
                 $html = $this->buildFormTail();
+            }
+
+            return $html;
+        }
+
+        public function tallyShortcodeHandler($att, $content)
+        {
+            $html = '';
+
+            if (isset($att['date'])) {
+                $html .= '<table>';
+                $electionDate = strtotime($att['date']);
+                $tally = $this->electionsPosts->getTally($electionDate);
+
+                foreach ($tally as $title => $data) {
+                    $raceTitle = ucwords(str_replace('_', ' ', $title));
+
+                    // Sort highest to lowest
+                    arsort($data['results']);
+                    $html .= '<tr><th colspan="2">' . $raceTitle . '</th></tr>';
+                    foreach ($data['results'] as $name => $voteCount) {
+                        $html .= '<tr><td>' . $name . '</td><td>' . $voteCount . '</td></tr>';
+                    }
+                }
+                $html .= '</table>';
             }
 
             return $html;

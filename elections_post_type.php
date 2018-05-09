@@ -99,7 +99,7 @@ if (!class_exists('ElectionsPosts')) {
             return $votes;
         }
 
-        public function voteTally($electionDate)
+        public function getVotesForElection($electionDate)
         {
             $votes = $this->getVotesByDate($electionDate);
 
@@ -114,13 +114,20 @@ if (!class_exists('ElectionsPosts')) {
             return $tally;
         }
 
-        public function getTally($votes)
+        public function getTally($electionDate)
         {
-            $prez = $votes['president'];
-            var_dump(array_count_values($prez));
-            $vp = $votes['vice_president'];
-            var_dump(array_count_values($vp));
+            $races = $this->getVotesForElection($electionDate);
 
+            $tally = [];
+
+            foreach ($races as $officeKey => $race) {
+                $tally[$officeKey] = [
+                    'race' => $officeKey,
+                    'results' => array_count_values($race)
+                ];
+            }
+
+            return $tally;
         }
 
         public function hasAlreadyVoted($electionDate, $hash)
