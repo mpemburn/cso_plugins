@@ -135,7 +135,6 @@ if (!class_exists('ElectionsPosts')) {
             $hasVoted = false;
 
             $election = $this->getVotesByDate($electionDate);
-
             foreach ($election->posts as $vote) {
                 $postId = $vote->ID;
                 $savedHash = get_post_meta($postId, 'hash')[0];

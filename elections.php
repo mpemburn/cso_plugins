@@ -26,6 +26,7 @@ if (!class_exists('CsoElections')) {
         protected $electionsPosts;
         protected $block = false;
         protected $errorMessage;
+        protected $adminOverride = false;
 
         public static function register()
         {
@@ -52,6 +53,8 @@ if (!class_exists('CsoElections')) {
 
         public function electionShortcodeHandler($att, $content)
         {
+            $this->adminOverride = (isset($_REQUEST['admin']));
+
             if ($this->block) {
                 return '';
             }
@@ -65,7 +68,8 @@ if (!class_exists('CsoElections')) {
             if (isset($att['start'])) {
                 $hash = $this->getHash();
                 $eligible = $this->testForElegibility($postId, $hash);
-                if (!$eligible) {
+                //var_dump($eligible, $hash, $postId);
+                if (!$eligible && !$this->adminOverride) {
                     $this->block = true;
                     return '<h4>' . $this->errorMessage . '</h4>';
                 }
@@ -112,13 +116,14 @@ if (!class_exists('CsoElections')) {
                 $order = $this->raceOrder;
 
 //                usort($tally, function ($a, $b) use ($order) {
-//                    $pos_a = array_search($a['race'], $order);
-//                    $pos_b = array_search($b['race'], $order);
-//                    return $pos_a - $pos_b;
+//                    $aPos = array_search($a['race'], $order);
+//                    $bPos = array_search($b['race'], $order);
+//                    return $aPos - $bPos;
 //                });
 
-                //krsort($tally);
-                foreach ($tally as $title => $data) {
+                foreach ($tally as $key => $data) {
+                    $title = array_shift($order);
+                    $title = $key;
                     $raceTitle = ucwords(str_replace('_', ' ', $title));
 
                     // Sort highest to lowest
@@ -295,11 +300,19 @@ if (!class_exists('CsoElections')) {
             return $hash;
         }
 
-        protected function getElectionDateStamp($postId)
+        protected function getElectionDateStamp($postId, $setTime = false)
         {
             $electionDate = get_post_meta($postId, 'election_date');
 
-            return (!empty($electionDate)) ? array_pop($electionDate) : null;
+            $timestamp = (!empty($electionDate)) ? array_pop($electionDate) : null;
+
+            // Set time to midnight
+            if ($setTime) {
+                $date = date('Y-m-d H:i:s', $timestamp + (12 * 3600));
+                $timestamp = strtotime($date);
+            }
+
+            return $timestamp;
         }
 
         protected function getRaceOrder($postId)
@@ -356,13 +369,14 @@ if (!class_exists('CsoElections')) {
         {
             $electionDate = $this->getElectionDateStamp($postId);
             $date = (isset($attributes['date'])) ? $attributes['date'] : null;
-            if (empty($electionDate) && !is_null($date)) {
+            if ((empty($electionDate) || $this->adminOverride) && !is_null($date)) {
+                // Add the deadline date to the post meta
                 update_post_meta($postId, 'election_date', strtotime($date));
             }
 
             $electionData = get_post_meta($postId, 'elections');
             $candidates = (isset($attributes['candidates'])) ? $attributes['candidates'] : null;
-            if (empty($electionData) && !is_null($candidates)) {
+            if ((empty($electionData) || $this->adminOverride) && !is_null($candidates)) {
                 // Add the data to the post meta
                 update_post_meta($postId, 'elections', $this->raceData);
             }
@@ -374,12 +388,21 @@ if (!class_exists('CsoElections')) {
             $verified = $this->verifyHash($hash);
             $electionDate = $this->getElectionDateStamp($postId);
             $alreadyVoted = $this->electionsPosts->hasAlreadyVoted($electionDate, $hash);
+            
             if (!$verified) {
                 $this->errorMessage = 'This content is not available.';
                 return false;
             }
             if ($alreadyVoted) {
                 $this->errorMessage = $this->electionsPosts->getErrorMessage();
+                return false;
+            }
+            if ($alreadyVoted) {
+                $this->errorMessage = $this->electionsPosts->getErrorMessage();
+                return false;
+            }
+            if ($electionDate <= time()) {
+                $this->errorMessage = 'The deadline for voting has passed.';
                 return false;
             }
 
